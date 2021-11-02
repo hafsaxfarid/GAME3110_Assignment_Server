@@ -14,6 +14,8 @@ public class NetworkedServer : MonoBehaviour
     int hostID;
     int socketPort = 5491;
 
+    LinkedList<PlayerAccount> playerAccounts;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -23,7 +25,8 @@ public class NetworkedServer : MonoBehaviour
         unreliableChannelID = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, maxConnections);
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
-        
+
+        playerAccounts = new LinkedList<PlayerAccount>();
     }
 
     // Update is called once per frame
@@ -32,8 +35,8 @@ public class NetworkedServer : MonoBehaviour
 
         int recHostID;
         int recConnectionID;
-        int recChannelID;
-        byte[] recBuffer = new byte[1024];
+        int recChannelID;  
+         byte[] recBuffer = new byte[1024];
         int bufferSize = 1024;
         int dataSize;
         byte error = 0;
@@ -68,6 +71,81 @@ public class NetworkedServer : MonoBehaviour
     private void ProcessRecievedMsg(string msg, int id)
     {
         Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
-    }
 
+        string[] csv = msg.Split(',');
+
+        int signifier = int.Parse(csv[0]);
+
+        if(signifier == ClientToSeverSignifiers.CreateAccount)
+        {
+            string n = csv[1];
+            string p = csv[2];
+
+            bool isUnique = false;
+
+            foreach(PlayerAccount pa in playerAccounts)
+            {
+                if(pa.playerName == n)
+                {
+                    isUnique = true;
+                    break;
+                }
+            }
+
+            if(!isUnique)
+            {
+                playerAccounts.AddLast(new PlayerAccount(n,p));
+
+                SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.Success, id);
+            }
+            else
+            {
+                SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.Failure, id);
+            }
+        }
+        else if(signifier == ClientToSeverSignifiers.Login)
+        {
+            string n = csv[1];
+            string p = csv[2];
+
+            foreach (PlayerAccount pa in playerAccounts)
+            {
+                if (pa.playerName == n)
+                {
+
+
+                    break;
+                }
+            }
+        }
+    }
+}
+
+public class PlayerAccount
+{
+    public string playerName, playerPassword;
+
+    public PlayerAccount(string name, string password)
+    {
+        playerName = name;
+        playerPassword = password;
+    }
+}
+
+public static class ClientToSeverSignifiers
+{
+    public const int Login = 1;
+
+    public const int CreateAccount = 2;
+}
+
+public static class SeverToClientSignifiers
+{
+    public const int LoginResponse = 1;
+}
+
+public static class LoginResponses
+{
+    public const int Success = 1;
+    public const int Failure = 2;
 }
