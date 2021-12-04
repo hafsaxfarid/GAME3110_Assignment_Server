@@ -83,7 +83,7 @@ public class NetworkedServer : MonoBehaviour
 
             bool isUnique = false;
 
-            foreach(PlayerAccount pa in playerAccounts)
+            foreach (PlayerAccount pa in playerAccounts)
             {
                 if(pa.playerName == n)
                 {
@@ -92,30 +92,44 @@ public class NetworkedServer : MonoBehaviour
                 }
             }
 
-            if(!isUnique)
+            if (!isUnique)
             {
-                playerAccounts.AddLast(new PlayerAccount(n,p));
-
+                playerAccounts.AddLast(new PlayerAccount(n, p));
                 SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.Success, id);
             }
             else
             {
-                SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.Failure, id);
+                SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.FailureNameInUse, id);
             }
+
         }
         else if(signifier == ClientToSeverSignifiers.Login)
         {
             string n = csv[1];
             string p = csv[2];
 
+            bool hasBeenFound = false;
+
             foreach (PlayerAccount pa in playerAccounts)
             {
                 if (pa.playerName == n)
                 {
-
-
+                    if (pa.playerPassword == p)
+                    {
+                        SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.Success, id);           
+                    }
+                    else
+                    {
+                        SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.IncorrectPassword, id);
+                    }
+                    hasBeenFound = true;
                     break;
                 }
+            }
+
+            if (!hasBeenFound)
+            {
+                SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.FailureNameNotFound, id);
             }
         }
     }
@@ -147,5 +161,7 @@ public static class SeverToClientSignifiers
 public static class LoginResponses
 {
     public const int Success = 1;
-    public const int Failure = 2;
+    public const int FailureNameInUse = 2;
+    public const int FailureNameNotFound = 3;
+    public const int IncorrectPassword = 4;
 }
