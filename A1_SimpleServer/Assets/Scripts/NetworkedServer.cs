@@ -44,7 +44,7 @@ public class NetworkedServer : MonoBehaviour
 
         int recHostID;
         int recConnectionID;
-        int recChannelID;  
+        int recChannelID;
          byte[] recBuffer = new byte[1024];
         int bufferSize = 1024;
         int dataSize;
@@ -90,18 +90,18 @@ public class NetworkedServer : MonoBehaviour
             string n = csv[1];
             string p = csv[2];
 
-            bool isUnique = false;
+            bool isUnique = true;
 
             foreach (PlayerAccount pa in playerAccounts)
             {
                 if(pa.playerName == n)
                 {
-                    isUnique = true;
+                    isUnique = false;
                     break;
                 }
             }
 
-            if (!isUnique)
+            if (isUnique) // when is unique name
             {
                 playerAccounts.AddLast(new PlayerAccount(n, p));
                 SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.Success, id);
@@ -109,7 +109,7 @@ public class NetworkedServer : MonoBehaviour
                 // Saving Player Account
                 SavePlayerAccounts();
             }
-            else
+            else // when not unique name
             {
                 SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.FailureNameInUse, id);
             }
@@ -186,6 +186,11 @@ public class PlayerAccount
         playerName = name;
         playerPassword = password;
     }
+}
+
+public class GameSession
+{
+    
 }
 
 public static class ClientToSeverSignifiers
