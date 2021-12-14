@@ -16,9 +16,15 @@ public class NetworkedServer : MonoBehaviour
 
     LinkedList<PlayerAccount> playerAccounts;
 
+    // Player Accounts File Location
+    static string playerAccountsFilePath;
+
     // Start is called before the first frame update
     void Start()
     {
+        // Player Accounts File Location
+        playerAccountsFilePath = Application.dataPath + Path.DirectorySeparatorChar + "PlayerAccountsData.txt";
+
         NetworkTransport.Init();
         ConnectionConfig config = new ConnectionConfig();
         reliableChannelID = config.AddChannel(QosType.Reliable);
@@ -27,6 +33,9 @@ public class NetworkedServer : MonoBehaviour
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
 
         playerAccounts = new LinkedList<PlayerAccount>();
+
+        // Loading Player Accounts
+        LoadPlayerAccounts();
     }
 
     // Update is called once per frame
@@ -96,6 +105,9 @@ public class NetworkedServer : MonoBehaviour
             {
                 playerAccounts.AddLast(new PlayerAccount(n, p));
                 SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.Success, id);
+
+                // Saving Player Account
+                SavePlayerAccounts();
             }
             else
             {
@@ -131,6 +143,36 @@ public class NetworkedServer : MonoBehaviour
             {
                 SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.FailureNameNotFound, id);
             }
+        }
+    }
+
+    private void SavePlayerAccounts()
+    {
+        StreamWriter sw = new StreamWriter(playerAccountsFilePath);
+     
+        foreach (PlayerAccount pa in playerAccounts)
+        {
+            sw.WriteLine(pa.playerName + "," + pa.playerPassword);
+        }
+        sw.Close();
+    }
+
+    private void LoadPlayerAccounts()
+    {
+        if(File.Exists(playerAccountsFilePath))
+        {
+            StreamReader sr = new StreamReader(playerAccountsFilePath);
+
+            string line;
+
+            while ((line = sr.ReadLine()) != null)
+            {
+                string[] csv = line.Split(',');
+
+                PlayerAccount pa = new PlayerAccount(csv[0], csv[1]);
+                playerAccounts.AddLast(pa);
+            }
+            sr.Close();
         }
     }
 }
