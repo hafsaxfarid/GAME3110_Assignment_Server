@@ -19,7 +19,8 @@ public class NetworkedServer : MonoBehaviour
     // Player Accounts File Location
     static string playerAccountsFilePath;
 
-    // Start is called before the first frame update
+    int playersWaitingToPlay;
+
     void Start()
     {
         // Player Accounts File Location
@@ -36,6 +37,8 @@ public class NetworkedServer : MonoBehaviour
 
         // Loading Player Accounts
         LoadPlayerAccounts();
+
+        playersWaitingToPlay = -1;
     }
 
     // Update is called once per frame
@@ -144,6 +147,26 @@ public class NetworkedServer : MonoBehaviour
                 SendMessageToClient(SeverToClientSignifiers.LoginResponse + "," + LoginResponses.FailureNameNotFound, id);
             }
         }
+        else if(signifier == ClientToSeverSignifiers.LookingForGameRoom)
+        {
+            if (playersWaitingToPlay == -1)
+            {
+                playersWaitingToPlay = id;
+            }
+            else
+            {
+                TicTacToeGameSession tttgs = new TicTacToeGameSession(playersWaitingToPlay, id);
+                
+                SendMessageToClient(SeverToClientSignifiers.TicTacToeGameStarted + ",", id);
+                SendMessageToClient(SeverToClientSignifiers.TicTacToeGameStarted + ",", playersWaitingToPlay);
+                
+                playersWaitingToPlay = -1;
+            }
+        }
+        else if (signifier == ClientToSeverSignifiers.PlayingTicTacToe)
+        {
+            Debug.Log("TO DO: Make Game Playable");
+        }
     }
 
     private void SavePlayerAccounts()
@@ -188,21 +211,29 @@ public class PlayerAccount
     }
 }
 
-public class GameSession
+public class TicTacToeGameSession
 {
-    
+    int player1ID, player2ID;
+
+    public TicTacToeGameSession(int player1, int player2)
+    {
+        player1 = player1ID;
+        player2 = player2ID;
+    }
 }
 
 public static class ClientToSeverSignifiers
 {
     public const int Login = 1;
-
     public const int CreateAccount = 2;
+    public const int LookingForGameRoom = 3;
+    public const int PlayingTicTacToe = 4;
 }
 
 public static class SeverToClientSignifiers
 {
-    public const int LoginResponse = 1;
+    public const int LoginResponse = 1;  
+    public const int TicTacToeGameStarted = 2;
 }
 
 public static class LoginResponses
